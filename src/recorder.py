@@ -110,4 +110,3 @@ class Recorder:
         buffer = self._get_buffer()
         self._set_idle()
         return buffer
-    

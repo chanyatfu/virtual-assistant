@@ -11,6 +11,6 @@ class SileroVad:
         self.read_audio,
         self.VADIterator,
         self.collect_chunks) = self.utils
-        
+    
     def __call__(self, *args: Any, **kwds: Any) -> Any:
         return self.model(*args, **kwds)

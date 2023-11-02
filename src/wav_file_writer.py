@@ -15,3 +15,5 @@ class WavFileWriter:
         wf.setframerate(self.rate)
         wf.writeframes(frames)
         wf.close()
+
+    
