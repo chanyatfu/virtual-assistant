@@ -14,7 +14,7 @@ class Recorder:
         self.CHANNELS = 1
         self.RATE = 16000
         self.CHUNK_DURATION_MS = 150
-        self.PADDING_DURATION_MS = 1500
+        self.PADDING_DURATION_MS = 800
         self.CHUNK_SIZE = int(self.RATE * self.CHUNK_DURATION_MS / 1000)
         self.PADDING_CHUNKS = int(self.PADDING_DURATION_MS / self.CHUNK_DURATION_MS)
 

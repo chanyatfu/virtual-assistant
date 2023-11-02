@@ -7,9 +7,9 @@ class VocalActivity(Enum):
     
     @staticmethod
     def get_vocal_activity(confidence: float):
-        if confidence > 0.7:
+        if confidence > 0.85:
             return VocalActivity.VOICED
-        elif confidence < 0.2:
+        elif confidence < 0.5:
             return VocalActivity.UNVOICED
         else:
             return VocalActivity.MIXED
