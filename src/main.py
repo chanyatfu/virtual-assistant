@@ -1,14 +1,17 @@
+from datetime import datetime
+
 from src.recorder import Recorder
-from src.wav_file_writer import WavFileWriter
-from src.asr import WhisperCloud, Asr
+from src.asr import WhisperCloud, Asr, Vosk, WhisperLocal
 from src.gpt import Gpt
 from src.tts import Tts
 from src.audio_player import AudioPlayer
 from utils import clear_line
 
-wav_file_writer = WavFileWriter()
+from src.weather import get_weather
+
+
 recorder = Recorder()
-asr: Asr = WhisperCloud()
+asr: Asr = WhisperLocal()
 gpt = Gpt()
 tts = Tts()
 player = AudioPlayer()
@@ -17,14 +20,24 @@ def run_recorder():
     while True:
         byte = recorder.iter()
         if (byte):
-            wav_file_writer(byte)
-            input = asr("output.wav")
+            player.load_and_play_once("./assets/received.wav")
+            input = asr(byte)
             print(clear_line + "You said: " + input)
             output = gpt(input)
-            if output == "ring":
-                player.load_and_play("./assets/ring.wav")
+            if output == "ring" or output == "beep":
+                player.load_and_play_in_loop("./assets/ring.wav")
             elif output == "stop_ring":
                 player.stop()
+            elif output == "weather":
+                weather = get_weather()
+                output = gpt("weather\n" + weather)
+                print(clear_line + "Assistant said: " + output)
+                tts(output)
+            elif output == "time":
+                time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                output = gpt("time\n" + time)
+                print(clear_line + "Assistant said: " + output)
+                tts(output)
             else:
                 print(clear_line + "Assistant said: " + output)
                 tts(output)
