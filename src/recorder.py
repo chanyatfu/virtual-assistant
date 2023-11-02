@@ -1,11 +1,10 @@
 import pyaudio
 import numpy as np
 import torch
-from enum import Enum
+from typing import Optional, List
 from src.silero_vad import SileroVad
 from src.vocal_activity import VocalActivity
 from src.utils import clear_line
-from src.wav_file_writer import WavFileWriter
 
 
 class Recorder:
@@ -29,21 +28,45 @@ class Recorder:
                                       frames_per_buffer=self.CHUNK_SIZE)
         self.active = False
         self.vad = SileroVad()
-        self.buffer = []
-        self.wav_file_writer = WavFileWriter()
+        self.buffer: List[bytes] = []
         
-    def reset_padding_chunks(self):
+    def init(self) -> None:
+        self.stream.start_stream()
+        print('Listening (ctrl-C to exit)...')
+    
+    def iter(self) -> Optional[bytes] :
+        chunk = self._read_stream()
+        chunk_tensor = self._stream_to_float_tensor(chunk)
+        confidence = self.vad(chunk_tensor, 16000).item()
+        vocal_activity = VocalActivity.get_vocal_activity(confidence)
+        self._append_buffer(chunk)
+        
+        if self._is_finished():
+            return self._get_buffer_and_cleanup()
+        elif self.active:
+            self._update_padding_chunks(vocal_activity)
+        elif (not self.active) and (vocal_activity == VocalActivity.VOICED):
+            self.active = True
+        
+        self._print_current_state_and_confidence(confidence)
+    
+    def terminate(self) -> None:
+        self.stream.stop_stream()
+        self.stream.close()
+        self.audio.terminate()
+        
+    def _reset_padding_chunks(self) -> None:
         self.remaining_padding = self.PADDING_CHUNKS
         
-    def decrement_padding_chunks(self):
+    def _decrement_padding_chunks(self) -> None:
         self.remaining_padding -= 1
         
-    def chunk_to_float_tensor(self, chunk):
+    def _chunk_to_float_tensor(self, chunk: bytes) -> torch.Tensor:
         audio_int16 = np.frombuffer(chunk, np.int16)
-        audio_float32 = self.int2float(audio_int16)
+        audio_float32 = self._int2float(audio_int16)
         return torch.from_numpy(audio_float32)
     
-    def int2float(self, sound):
+    def _int2float(self, sound: np.ndarray) -> np.ndarray:
         abs_max = np.abs(sound).max()
         sound = sound.astype('float32')
         if abs_max > 0:
@@ -51,60 +74,40 @@ class Recorder:
         sound = sound.squeeze()
         return sound
     
-    def read_stream(self):
+    def _read_stream(self) -> bytes:
         return self.stream.read(self.CHUNK_SIZE, exception_on_overflow=False)
     
-    def stream_to_float_tensor(self, stream):
-        return self.chunk_to_float_tensor(stream)
+    def _stream_to_float_tensor(self, stream: bytes) -> torch.Tensor:
+        return self._chunk_to_float_tensor(stream)
     
-    def update_padding_chunks(self, vocal_activity):
+    def _update_padding_chunks(self, vocal_activity: VocalActivity) -> None:
         if vocal_activity == VocalActivity.UNVOICED:
-            self.decrement_padding_chunks()
+            self._decrement_padding_chunks()
         else:
-            self.reset_padding_chunks()
+            self._reset_padding_chunks()
             
-    def set_idle(self):
+    def _set_idle(self) -> None:
         self.active = False
-        self.reset_padding_chunks()
+        self._reset_padding_chunks()
         self.buffer.clear()
         
-    def is_finished(self):
+    def _is_finished(self) -> bool:
         return self.active and self.remaining_padding == 0
     
-    def print_current_state_and_confidence(self, confidence):
+    def _print_current_state_and_confidence(self, confidence: float) -> None:
         if self.active:
             print(f'{clear_line}Recording: {confidence}\r', end='')
         else:
             print(f'{clear_line}Idling : {confidence}\r', end='')
             
-    def append_buffer(self, chunk):
+    def _append_buffer(self, chunk: bytes) -> None:
         self.buffer.append(chunk)
         
-    def get_buffer(self):
+    def _get_buffer(self) -> bytes:
         return b''.join(self.buffer)
     
-    def run(self):
-        self.stream.start_stream()
-        print('Listening (ctrl-C to exit)...')
-        while True:
-            chunk = self.read_stream()
-            chunk_tensor = self.stream_to_float_tensor(chunk)
-            confidence = self.vad(chunk_tensor, 16000).item()
-            vocal_activity = VocalActivity.get_vocal_activity(confidence)
-            
-            if self.is_finished():
-                self.wav_file_writer(self.get_buffer())
-                self.set_idle()
-            elif self.active:
-                self.update_padding_chunks(vocal_activity)
-                self.append_buffer(chunk)
-            elif vocal_activity == VocalActivity.VOICED:
-                self.active = True
-                self.append_buffer(chunk)
-            
-            self.print_current_state_and_confidence(confidence)
+    def _get_buffer_and_cleanup(self) -> bytes:
+        buffer = self._get_buffer()
+        self._set_idle()
+        return buffer
     
-    def terminate(self):
-        self.stream.stop_stream()
-        self.stream.close()
-        self.audio.terminate()
