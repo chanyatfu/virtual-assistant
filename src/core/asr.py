@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 import vosk
 
 
-from src.wav_file_writer import WavFileWriter
+from src.core.wav_file_writer import WavFileWriter
 
 load_dotenv(".env.local")
 openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -23,6 +23,10 @@ class Asr(ABC):
     def __call__(self, audio_file):
         pass
 
+class Streaming(ABC):
+    @abstractmethod
+    def reset(self):
+        pass
 
 class WhisperLocal(Asr):
     def __init__(self, model_size="small"):
@@ -45,17 +49,18 @@ class WhisperCloud(Asr):
             return openai.Audio.transcribe(self.model, audio_file)["text"]
 
 
-class Vosk(Asr):
+class Vosk(Asr, Streaming):
     def __init__(self, model_path="./models/vosk-model-en-us-0.22"):
         self.model = vosk.Model(model_path)
         self.recognizer = vosk.KaldiRecognizer(self.model, 16000)
+        self.result = ""
 
     def __call__(self, audio):
-        self.reset()
         if self.recognizer.AcceptWaveform(audio):
-            return json.loads(self.recognizer.Result())["text"]
+            self.result = json.loads(self.recognizer.Result())["text"]
         else:
-            return json.loads(self.recognizer.PartialResult())["partial"]
+            self.result =  json.loads(self.recognizer.PartialResult())["partial"]
 
     def reset(self):
         self.recognizer = vosk.KaldiRecognizer(self.model, 16000)
+        self.result = ""

@@ -1,0 +1,4 @@
+{"messages": [{"role": "system", "content": "Sophia is a virtual assistant of a robot that guide visual impaired individual."}, {"role": "user", "content": "What's the time now?"}, {"role": "assistant", "content": "time"}]}
+{"messages": [{"role": "system", "content": "Sophia is a virtual assistant of a robot that guide visual impaired individual."}, {"role": "user", "content": "Where are you?"}, {"role": "assistant", "content": "ring"}]}
+{"messages": [{"role": "system", "content": "Sophia is a virtual assistant of a robot that guide visual impaired individual."}, {"role": "user", "content": "Stop it"}, {"role": "assistant", "content": "stop_ring"}]}
+{"messages": [{"role": "system", "content": "Sophia is a virtual assistant of a robot that guide visual impaired individual."}, {"role": "user", "content": "Stop ringing"}, {"role": "assistant", "content": "stop_ring"}]}

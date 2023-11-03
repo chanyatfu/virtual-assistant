@@ -2,9 +2,9 @@ import pyaudio
 import numpy as np
 import torch
 from typing import Optional, List
-from src.silero_vad import SileroVad
-from src.vocal_activity import VocalActivity
-from src.utils import clear_line
+from src.core.silero_vad import SileroVad
+from src.core.vocal_activity import VocalActivity
+from src.helpers.clear_line import clear_line
 
 
 class Recorder:
@@ -29,12 +29,17 @@ class Recorder:
         self.active = False
         self.vad = SileroVad()
         self.buffer: List[bytes] = []
+        self.finished = False
+        
         
     def init(self) -> None:
         self.stream.start_stream()
         print('Listening (ctrl-C to exit)...')
     
-    def iter(self) -> Optional[bytes] :
+    def iter(self) -> Optional[bytes]:
+        if (not self.active):
+            self.finished = False
+            self.buffer.clear()
         chunk = self._read_stream()
         chunk_tensor = self._stream_to_float_tensor(chunk)
         confidence = self.vad(chunk_tensor, 16000).item()
@@ -42,13 +47,20 @@ class Recorder:
         self._append_buffer(chunk)
         
         if self._is_finished():
-            return self._get_buffer_and_cleanup()
+            self.finished = True
+            self._set_idle()
         elif self.active:
             self._update_padding_chunks(vocal_activity)
         elif (not self.active) and (vocal_activity == VocalActivity.VOICED):
             self.active = True
+        else:
+            self._print_current_state_and_confidence(confidence)
+            return None
         
         self._print_current_state_and_confidence(confidence)
+        return chunk
+        
+        
     
     def terminate(self) -> None:
         self.stream.stop_stream()
@@ -89,7 +101,7 @@ class Recorder:
     def _set_idle(self) -> None:
         self.active = False
         self._reset_padding_chunks()
-        self.buffer.clear()
+        # self.buffer.clear()
         
     def _is_finished(self) -> bool:
         return self.active and self.remaining_padding == 0

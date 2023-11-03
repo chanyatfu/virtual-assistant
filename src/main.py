@@ -1,57 +1,73 @@
-from datetime import datetime
-
-from src.recorder import Recorder
-from src.asr import WhisperCloud, Asr, Vosk, WhisperLocal
-from src.gpt import Gpt
-from src.tts import Tts
-from src.audio_player import AudioPlayer
-from utils import clear_line
-
-from src.weather import get_weather
+from src.core.recorder import Recorder
+from src.core.asr import WhisperCloud, Asr, Vosk, WhisperLocal
+from src.core.gpt import Gpt
+from src.core.tts import Tts
+from src.core.audio_player import AudioPlayer
+from src.helpers.clear_line import clear_line
+from src.plugin import clock, weather, expose
 
 
-recorder = Recorder()
-asr: Asr = WhisperLocal()
-gpt = Gpt()
-tts = Tts()
-player = AudioPlayer()
+class Assistant:
+    def __init__(self):
+        self.recorder = Recorder()
+        self.asr: Asr = Vosk()
+        self.gpt = Gpt()
+        self.tts = Tts()
+        self.player = AudioPlayer()
+        self.recorder.init()
+        
+    def run(self):
+        while True:
+            byte = self.recorder.iter()
+            if (byte):
+                self.asr(byte)
+            if (self.recorder.finished):
+                input = self.asr.result
+                self.asr.reset()
+                print(clear_line + "You said: " + input)
+                output = self.gpt(input)
+                self.handle_answer(output)
 
-def run_recorder():
-    while True:
-        byte = recorder.iter()
-        if (byte):
-            player.load_and_play_once("./assets/received.wav")
-            input = asr(byte)
-            print(clear_line + "You said: " + input)
-            output = gpt(input)
-            if output == "ring" or output == "beep":
-                player.load_and_play_in_loop("./assets/ring.wav")
-            elif output == "stop_ring":
-                player.stop()
-            elif output == "weather":
-                weather = get_weather()
-                output = gpt("weather\n" + weather)
+    
+    def handle_answer(self, answer): 
+        match (answer):
+            case "ring":
+                expose.start()
+            case "stop_ring":
+                expose.stop()
+            case "weather":
+                self.player.load_and_play_once("./assets/received.wav")
+                ret = weather.get_weather()
+                print(ret)
+                output = self.gpt("weather\n" + ret)
                 print(clear_line + "Assistant said: " + output)
-                tts(output)
-            elif output == "time":
-                time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                output = gpt("time\n" + time)
+                self.tts(output)
+            case "time":
+                self.player.load_and_play_once("./assets/received.wav")
+                time = clock.get_time()
+                output = self.gpt("time\n" + time)
                 print(clear_line + "Assistant said: " + output)
-                tts(output)
-            else:
-                print(clear_line + "Assistant said: " + output)
-                tts(output)
-
+                self.tts(output)
+            case "none":
+                pass
+            case _:
+                self.player.load_and_play_once("./assets/received.wav")
+                print(clear_line + "Assistant said: " + answer)
+                self.tts(answer)
+                        
+    def terminate(self):
+        self.recorder.terminate()
+        self.player.stop()
+        
 
 def main():
-
-    recorder.init()
+    assistant = Assistant()
     try:
-        run_recorder()
+        assistant.run()
     except KeyboardInterrupt:
         print("Exiting")
     finally:
-        recorder.terminate()
+        assistant.terminate()
 
 
 if __name__ == '__main__':
