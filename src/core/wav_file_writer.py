@@ -7,7 +7,7 @@ class WavFileWriter:
         self.rate = rate
         self.format = format
         self.sample_width = sample_width
-        
+
     def __call__(self, frames, filename="output.wav",):
         wf = wave.open(filename, 'wb')
         wf.setnchannels(self.channels)

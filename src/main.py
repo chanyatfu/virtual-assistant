@@ -15,7 +15,7 @@ class Assistant:
         self.tts = Tts()
         self.player = AudioPlayer()
         self.recorder.init()
-        
+
     def run(self):
         while True:
             byte = self.recorder.iter()
@@ -28,8 +28,7 @@ class Assistant:
                 output = self.gpt(input)
                 self.handle_answer(output)
 
-    
-    def handle_answer(self, answer): 
+    def handle_answer(self, answer):
         match (answer):
             case "ring":
                 expose.start()
@@ -54,11 +53,11 @@ class Assistant:
                 self.player.load_and_play_once("./assets/received.wav")
                 print(clear_line + "Assistant said: " + answer)
                 self.tts(answer)
-                        
+
     def terminate(self):
         self.recorder.terminate()
         self.player.stop()
-        
+
 
 def main():
     assistant = Assistant()

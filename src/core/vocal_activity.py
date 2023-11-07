@@ -4,7 +4,7 @@ class VocalActivity(Enum):
     UNVOICED = 1
     MIXED = 2
     VOICED = 3
-    
+
     @staticmethod
     def get_vocal_activity(confidence: float):
         if confidence > 0.85:
