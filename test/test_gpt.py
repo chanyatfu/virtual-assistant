@@ -1,5 +1,5 @@
 import unittest
-from ..src.core.gpt import Gpt
+from src.core.gpt import Gpt
 
 class TestGpt(unittest.TestCase):
     def test_weather(self):
