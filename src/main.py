@@ -10,7 +10,7 @@ from src.plugin import clock, weather, expose
 class Assistant:
     def __init__(self):
         self.recorder = Recorder()
-        self.asr: Asr = Vosk()
+        self.asr: Asr = WhisperCloud()
         self.gpt = Gpt()
         self.tts = Tts()
         self.player = AudioPlayer()
@@ -22,7 +22,7 @@ class Assistant:
             if (byte):
                 self.asr(byte)
             if (self.recorder.finished):
-                input = self.asr.result
+                input = self.asr.fetch()
                 self.asr.reset()
                 print(clear_line + "You said: " + input)
                 output = self.gpt(input)

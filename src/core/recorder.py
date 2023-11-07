@@ -6,7 +6,6 @@ from src.core.silero_vad import SileroVad
 from src.core.vocal_activity import VocalActivity
 from src.helpers.clear_line import clear_line
 
-
 class Recorder:
 
     def __init__(self):
@@ -105,9 +104,9 @@ class Recorder:
 
     def _print_current_state_and_confidence(self, confidence: float) -> None:
         if self.active:
-            print(f'{clear_line}Recording: {confidence}\r', end='')
+            print(f'{clear_line}Recording: {confidence}', end='\r', flush=True)
         else:
-            print(f'{clear_line}Idling : {confidence}\r', end='')
+            print(f'{clear_line}Idling : {confidence}', end='\r', flush=True)
 
     def _append_buffer(self, chunk: bytes) -> None:
         self.buffer.append(chunk)
