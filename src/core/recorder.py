@@ -2,7 +2,7 @@ import pyaudio
 import numpy as np
 import torch
 from typing import Optional, List
-from src.core.silero_vad import SileroVad
+from src.core.vad import SileroVad, PyannoteVad
 from src.core.vocal_activity import VocalActivity
 from src.helpers.clear_line import clear_line
 
@@ -40,7 +40,7 @@ class Recorder:
             self.buffer.clear()
         chunk = self._read_stream()
         chunk_tensor = self._stream_to_float_tensor(chunk)
-        confidence = self.vad(chunk_tensor, 16000).item()
+        confidence = self.vad(chunk_tensor)
         vocal_activity = VocalActivity.get_vocal_activity(confidence)
         self._append_buffer(chunk)
 

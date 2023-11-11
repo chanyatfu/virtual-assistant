@@ -13,5 +13,5 @@ class SileroVad:
         self.VADIterator,
         self.collect_chunks) = self.utils
 
-    def __call__(self, *args: Any, **kwds: Any) -> Any:
-        return self.model(*args, **kwds)
+    def __call__(self, chunk_tensor, sample_rate=16000) -> Any:
+        return self.model(chunk_tensor, sample_rate).item()
