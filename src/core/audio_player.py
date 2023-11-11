@@ -1,5 +1,6 @@
 import pygame
 import threading
+from src.helpers.concurrent_decor import concurrent
 
 class AudioPlayer:
     def __init__(self):
@@ -11,6 +12,7 @@ class AudioPlayer:
 
     def _play_once(self):
         pygame.mixer.music.play(0)
+
 
     def load_and_play_in_loop(self, filename):
         pygame.mixer.music.load(filename)

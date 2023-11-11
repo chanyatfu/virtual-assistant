@@ -36,15 +36,15 @@ class Assistant:
                 expose.stop()
             case "weather":
                 self.player.load_and_play_once("./assets/received.wav")
-                ret = weather.get_weather()
-                print(ret)
-                output = self.gpt("weather\n" + ret)
+                weather_info = weather.get_weather()
+                print(weather_info)
+                output = self.gpt(f"Describe {weather_info} in English.")
                 print(clear_line + "Assistant said: " + output)
                 self.tts(output)
             case "time":
                 self.player.load_and_play_once("./assets/received.wav")
                 time = clock.get_time()
-                output = self.gpt("time\n" + time)
+                output = self.gpt(f"Describe {time} in English.")
                 print(clear_line + "Assistant said: " + output)
                 self.tts(output)
             case "none":
